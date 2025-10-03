@@ -142,49 +142,58 @@
     }
 
     function renderViews(homeroom, dailyId, weekId) {
-      const dailyDiv = document.getElementById(dailyId);
-      const weekDiv = document.getElementById(weekId);
+    const dailyDiv = document.getElementById(dailyId);
+    const weekDiv = document.getElementById(weekId);
 
-      if (!homeroom) return;
+    if (!homeroom) return;
 
-      const todayStr = new Date().toLocaleDateString("en-US");
-      const todayRow = calendarData.find(r => r.Date === todayStr);
+    const todayStr = new Date().toLocaleDateString("en-US");
+    const todayRow = calendarData.find(r => r.Date === todayStr);
 
-      if (todayRow) {
+    if (todayRow) {
         const day = todayRow.Day;
+        // The lookup key 'DayA' etc. should work if your sheet headers are correct.
+        // We use || "No school" as a fallback for the daily view.
         const special = homeroomData[homeroom][`Day${day}`] || "No school";
+        
         dailyDiv.innerHTML = `
-          <h3>Today</h3>
-          <p><strong>${todayRow["Day of the week"]}</strong>, ${todayRow.Date} - Day ${day}</p>
-          <p>Special: ${special}</p>
+            <h3>Today</h3>
+            <p><strong>${todayRow["Day of the week"]}</strong>, ${todayRow.Date} - Day ${day}</p>
+            <p>Special: ${special}</p>
         `;
-      } else {
+    } else {
         dailyDiv.innerHTML = "<h3>Today</h3><p>No data for today.</p>";
-      }
+    }
 
-      // Next 5 days
-      const todayIndex = calendarData.findIndex(r => r.Date === todayStr);
-      let nextRows = calendarData.slice(todayIndex, todayIndex + 6);
+    // Next 5 days
+    const todayIndex = calendarData.findIndex(r => r.Date === todayStr);
+    let nextRows = calendarData.slice(todayIndex, todayIndex + 6);
 
-      if (!nextRows.length) {
+    if (!nextRows.length) {
         weekDiv.innerHTML = "<p>No upcoming data available.</p>";
         return;
-      }
+    }
 
-      let table = "<table><tr><th>Date</th><th>Day</th><th>Special</th></tr>";
-      nextRows.forEach(r => {
+    let table = "<table><tr><th>Date</th><th>Day</th><th>Special</th></tr>";
+    nextRows.forEach(r => {
         if (!r.Date) return;
         const day = r.Day;
-        const special = (day && homeroomData[homeroom][`Day${day}`]) || r.Day;
+        
+        // **THIS IS THE CRITICAL FIX:**
+        // If the lookup for the special fails (returns undefined/empty), 
+        // it now defaults to "Special N/A" instead of r.Day (the letter 'A', 'B', etc.), 
+        // preventing the duplication in the 'Special' column.
+        const special = (day && homeroomData[homeroom][`Day${day}`]) || "Special N/A";
+        
         table += `<tr>
-          <td>${r["Day of the week"]}, ${r.Date}</td>
-          <td>${day}</td>
-          <td>${special}</td>
+            <td>${r["Day of the week"]}, ${r.Date}</td>
+            <td>${day}</td>
+            <td>${special}</td>
         </tr>`;
-      });
-      table += "</table>";
-      weekDiv.innerHTML = `<div class="table-wrapper">${table}</div>`;
-    }
+    });
+    table += "</table>";
+    weekDiv.innerHTML = `<div class="table-wrapper">${table}</div>`;
+}
 
     window.onload = loadData;
   </script>
